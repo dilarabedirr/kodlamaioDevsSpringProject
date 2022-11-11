@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import kodlama.io.devs.business.abstracts.ProgrammingLanguageService;
+import kodlama.io.devs.business.constants.Messages;
 import kodlama.io.devs.business.requests.programmingLanguageRequests.CreateProgrammingLanguageRequest;
 import kodlama.io.devs.business.requests.programmingLanguageRequests.DeleteProgrammingLanguageRequest;
 import kodlama.io.devs.business.requests.programmingLanguageRequests.UpdateProgrammingLanguageRequest;
@@ -27,18 +28,12 @@ public class ProgrammingLanguageManager implements ProgrammingLanguageService {
 
 	@Override
 	public void add(CreateProgrammingLanguageRequest createProgrammingLanguageRequest) {
-		var languages = programmingLanguageRepository.findAll();
-		for (ProgrammingLanguage language : languages) {
-			if (createProgrammingLanguageRequest.getName().equals(language.getProgrammingLanguageName())) {
-				System.out.println("İsim tekrar edemez : " + createProgrammingLanguageRequest.getName());
-				return;
-			}
-		}
-		if (createProgrammingLanguageRequest.getName() == "" || createProgrammingLanguageRequest.getName() == null) {
-			System.out.println("Programlama dili boş geçilemez.");
+		if (checkIfProgrammingLanguageNameExists(createProgrammingLanguageRequest.getName()) == false
+				|| checkIfNameIsEmpty(createProgrammingLanguageRequest.getName()) == false) {
 			return;
 		}
-		ProgrammingLanguage programmingLanguage=new ProgrammingLanguage();
+
+		ProgrammingLanguage programmingLanguage = new ProgrammingLanguage();
 		programmingLanguage.setProgrammingLanguageName(createProgrammingLanguageRequest.getName());
 		programmingLanguageRepository.save(programmingLanguage);
 
@@ -46,14 +41,22 @@ public class ProgrammingLanguageManager implements ProgrammingLanguageService {
 
 	@Override
 	public void delete(DeleteProgrammingLanguageRequest deleteProgrammingLanguageRequest) {
+		if (checkIfId(deleteProgrammingLanguageRequest.getId()) == false) {
+			return;
+		}
 		programmingLanguageRepository.deleteById(deleteProgrammingLanguageRequest.getId());
 	}
 
 	@Override
 	public void update(UpdateProgrammingLanguageRequest updateProgrammingLanguageRequest) {
+		if (checkIfProgrammingLanguageNameExists(updateProgrammingLanguageRequest.getName()) == false
+				|| checkIfNameIsEmpty(updateProgrammingLanguageRequest.getName()) == false
+				|| checkIfId(updateProgrammingLanguageRequest.getId()) == false) {
+			return;
+		}
 		ProgrammingLanguage programmingLanguage = new ProgrammingLanguage();
-	    programmingLanguage.setProgrammingLanguageId(updateProgrammingLanguageRequest.getId());
-	    programmingLanguage.setProgrammingLanguageName(updateProgrammingLanguageRequest.getName());
+		programmingLanguage.setProgrammingLanguageId(updateProgrammingLanguageRequest.getId());
+		programmingLanguage.setProgrammingLanguageName(updateProgrammingLanguageRequest.getName());
 		programmingLanguageRepository.save(programmingLanguage);
 
 	}
@@ -75,10 +78,38 @@ public class ProgrammingLanguageManager implements ProgrammingLanguageService {
 
 	@Override
 	public GetByIdProgrammingLanguageResponse getById(int id) {
+		if (checkIfId(id) == false) {
+			return null;
+		}
 		ProgrammingLanguage language = programmingLanguageRepository.findById(id).get();
 		GetByIdProgrammingLanguageResponse response = new GetByIdProgrammingLanguageResponse();
 		response.setName(language.getProgrammingLanguageName());
 		return response;
+	}
+
+	private boolean checkIfProgrammingLanguageNameExists(String name) {
+		ProgrammingLanguage programmingLanguage = this.programmingLanguageRepository.getByProgrammingLanguageName(name);
+		if (programmingLanguage != null) {
+			System.out.println(Messages.PROGRAMMING_LANGUAGE_NAME_EXISTS + " : " + name);
+			return false;
+		}
+		return true;
+	}
+
+	private boolean checkIfNameIsEmpty(String name) {
+		if (name.equals("") || name.equals(null)) {
+			System.out.println(Messages.PROGRAMMING_LANGUAGE_NAME_EMPTY);
+			return false;
+		}
+		return true;
+	}
+
+	private boolean checkIfId(int id) {
+		if (!this.programmingLanguageRepository.existsById(id)) {
+			System.out.println(Messages.PROGRAMMING_LANGUAGE_NOT_FOUND);
+			return false;
+		}
+		return true;
 	}
 
 }
